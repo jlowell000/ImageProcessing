@@ -1,5 +1,6 @@
 # ImageProcessing
 Implementation of simple image stuff in Go
+
 Example input:
 
 ![alt text](https://github.com/jlowell000/ImageProcessing/blob/master/images/in.png)
