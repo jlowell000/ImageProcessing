@@ -1,43 +1,186 @@
 package main
 
 import (
+	"fmt"
 	"image"
+	"image/jpeg"
 	"image/png"
+	"log"
 	"os"
+	"path"
+	"reflect"
 	"runtime"
+	"strings"
+
+	"github.com/urfave/cli"
 )
 
 /* Keep odd for simplicity */
-// const kernalSize = 5
-const sigma = 1.6
-const highThreshold, lowThreshold = 7500, 20000
+const (
+	sigma                       = 1.6
+	highThreshold, lowThreshold = 7500, 20000
+	cliDelimitor                = ","
+)
+
+var (
+	availableFunctions = map[string]func(image.Image) image.Image{
+		"greyscale":       greyscaleHandle,
+		"gaussian":        gaussianHandle,
+		"sobel":           sobelHandle,
+		"doubleThreshold": doubleThresholdHandle,
+		"fillInGaps":      fillInGapsHandle,
+	}
+)
 
 func main() {
 
-	loadedImage := readFileToImage("images/in.png")
+	var (
+		functions, filePaths []string
+		functionStr, errStr  string
+		verboseOutput        bool
+	)
 
-	alteredImage := actOnImagePixel(loadedImage, greyscale, runtime.GOMAXPROCS(0))
-	writeImageFile("images/greyscale.png", alteredImage)
-	alteredImage = actOnImageKernal(alteredImage, gaussianFilter, 7, runtime.GOMAXPROCS(0)/5)
-	writeImageFile("images/gaussian.png", alteredImage)
-	alteredImage = actOnImageKernal(alteredImage, sobelFilter, 3, runtime.GOMAXPROCS(0)/5)
-	writeImageFile("images/sobel.png", alteredImage)
-	alteredImage = actOnImagePixel(alteredImage, doubleThreshold, runtime.GOMAXPROCS(0))
-	writeImageFile("images/doubleThreshold.png", alteredImage)
-	alteredImage = actOnImagePixel(alteredImage, fillInGaps, runtime.GOMAXPROCS(0))
-	writeImageFile("images/fillInGaps.png", alteredImage)
+	app := cli.NewApp()
+	app.Name = "ImageProcessing"
+	app.Usage = "Run functions over Image files\nSupports JPEG and PNG"
+	app.Flags = []cli.Flag{
+		cli.BoolFlag{
+			Name:        "output, o",
+			Usage:       "Controls how verbose the out is. When enabled all function results outputed",
+			Destination: &verboseOutput,
+		},
+		cli.StringFlag{
+			Name:  "function, f",
+			Value: "all",
+			Usage: "Functions requested to run. \"all\" runs all functions for edge detection\n  Available functions: " +
+				"[" + strings.Join(getAvailableFunctionsNames(), ", ") + "]",
+			Destination: &functionStr,
+		},
+	}
+	app.Action = func(c *cli.Context) error {
+		if c.NArg() > 0 {
+			filePaths = strings.Split(c.Args()[0], cliDelimitor)
+		}
+		if len(functionStr) > 0 && functionStr != "all" {
+			functions = strings.Split(functionStr, cliDelimitor)
+			verifyFuncList := getAvailableFunctionsNames()
+			for _, f := range functions {
+				if !contains(verifyFuncList, f) {
+					errStr = "Function " + f + " not in available"
+					fmt.Printf("ERROR:  %s\n", errStr)
+				}
+			}
+		} else {
+			functions = getAvailableFunctionsNames()
+		}
+		if len(errStr) == 0 {
+			if len(filePaths) > 0 && len(functions) > 0 {
+				if verboseOutput {
+					fmt.Printf("Funcions to run: %s\n", functions)
+				}
+				for _, file := range filePaths {
+					fmt.Printf("Processing File: %s\n", file)
+					loadedImage := readFileToImage(file)
+					if loadedImage != nil {
+						for _, f := range functions {
+							loadedImage = availableFunctions[f](loadedImage)
+							if verboseOutput {
+								newFileName := createDerivedFileNames(file, f)
+								fmt.Printf("Creating file: %s\n", newFileName)
+								writeImageFile(newFileName, loadedImage)
+							}
+						}
+						if !verboseOutput {
+							newFileName := createDerivedFileNames(file, "output")
+							fmt.Printf("Creating file: %s\n", newFileName)
+							writeImageFile(newFileName, loadedImage)
+						}
+					} else {
+						fmt.Printf("File at %s not found\n", file)
+					}
+				}
+			}
+		}
+		return nil
+	}
+
+	err := app.Run(os.Args)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+}
+
+func getAvailableFunctionsNames() []string {
+	keys := reflect.ValueOf(availableFunctions).MapKeys()
+	strkeys := make([]string, len(keys))
+	for i, k := range keys {
+		strkeys[i] = k.String()
+	}
+	return strkeys
+}
+func contains(list []string, e string) bool {
+	for _, a := range list {
+		if a == e {
+			return true
+		}
+	}
+	return false
+}
+
+func greyscaleHandle(loadedImage image.Image) image.Image {
+	return actOnImagePixel(loadedImage, greyscale, runtime.GOMAXPROCS(0))
+}
+func gaussianHandle(loadedImage image.Image) image.Image {
+	return actOnImageKernal(loadedImage, gaussianFilter, 7, runtime.GOMAXPROCS(0)/5)
+}
+func sobelHandle(loadedImage image.Image) image.Image {
+	return actOnImageKernal(loadedImage, sobelFilter, 3, runtime.GOMAXPROCS(0)/5)
+}
+func doubleThresholdHandle(loadedImage image.Image) image.Image {
+	return actOnImagePixel(loadedImage, doubleThreshold, runtime.GOMAXPROCS(0))
+}
+func fillInGapsHandle(loadedImage image.Image) image.Image {
+	return actOnImagePixel(loadedImage, fillInGaps, runtime.GOMAXPROCS(0))
+}
+
+func createDerivedFileNames(filePath string, mod string) string {
+	return path.Dir(filePath) + string(os.PathSeparator) + mod + "_" + path.Base(filePath)
 }
 
 func readFileToImage(fileName string) image.Image {
-	// Read image from file that already exists
-	existingImageFile, _ := os.Open(fileName)
+	var loadedImage image.Image
+	// Read image from inFile that already exists
+	existingImageFile, err := os.Open(fileName)
+	if err != nil {
+		panic(err)
+	}
 	defer existingImageFile.Close()
-	loadedImage, _ := png.Decode(existingImageFile)
+	fileExt := path.Ext(fileName)
+	if fileExt == ".png" {
+		loadedImage, err = png.Decode(existingImageFile)
+	} else if fileExt == ".jpg" {
+		loadedImage, err = jpeg.Decode(existingImageFile)
+	}
+	if err != nil {
+		panic(err)
+	}
 	return loadedImage
 }
 
 func writeImageFile(fileName string, image image.Image) {
-	f, _ := os.OpenFile(fileName, os.O_WRONLY|os.O_CREATE, 0600)
+	f, err := os.OpenFile(fileName, os.O_WRONLY|os.O_CREATE, 0600)
+	if err != nil {
+		panic(err)
+	}
 	defer f.Close()
-	png.Encode(f, image)
+	fileExt := path.Ext(fileName)
+	if fileExt == ".png" {
+		err = png.Encode(f, image)
+	} else if fileExt == ".jpg" {
+		err = jpeg.Encode(f, image, nil)
+	}
+	if err != nil {
+		panic(err)
+	}
 }
