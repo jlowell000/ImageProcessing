@@ -46,7 +46,7 @@ func main() {
 	app.Flags = []cli.Flag{
 		cli.BoolFlag{
 			Name:        "output, o",
-			Usage:       "Controls how verbose the out is. When enabled all function results outputed",
+			Usage:       "makes verbose file output foreach step",
 			Destination: &verboseOutput,
 		},
 		cli.StringFlag{
