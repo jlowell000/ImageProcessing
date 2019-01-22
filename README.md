@@ -18,4 +18,4 @@ Example input:
 
 And its output:
 
-![alt text](https://github.com/jlowell000/ImageProcessing/blob/master/images/fillInGaps.png)
+![alt text](https://github.com/jlowell000/ImageProcessing/blob/master/images/output_in.png)
