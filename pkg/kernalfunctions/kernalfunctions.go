@@ -1,10 +1,22 @@
-package main
+package kernalfunctions
 
 import (
 	"image"
 	"image/color"
 	"math"
+	"runtime"
+
+	"../actionengine"
 )
+
+const (
+	sigma = 1.6
+)
+
+/*GaussianHandle runs Gaussian Filter over image*/
+func GaussianHandle(loadedImage image.Image) image.Image {
+	return actionengine.ActOnImageKernal(loadedImage, gaussianFilter, 7, runtime.GOMAXPROCS(0)/5)
+}
 
 func gaussianFilter(p image.Point, imageOld image.Image, kernalSize int) [][]color.Color {
 
@@ -37,6 +49,10 @@ func gaussianFilter(p image.Point, imageOld image.Image, kernalSize int) [][]col
 	return output
 }
 
+/*SobelHandle runs Sobel kernal over image*/
+func SobelHandle(loadedImage image.Image) image.Image {
+	return actionengine.ActOnImageKernal(loadedImage, sobelFilter, 3, runtime.GOMAXPROCS(0)/5)
+}
 func sobelFilter(p image.Point, imageOld image.Image, kernalSize int) [][]color.Color {
 
 	gradientGValue := func(p image.Point, imageOld image.Image, kernalSize int) (gX, gY float64) {

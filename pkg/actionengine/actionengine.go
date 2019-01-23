@@ -1,4 +1,4 @@
-package main
+package actionengine
 
 import (
 	"image"
@@ -6,7 +6,8 @@ import (
 	"sync"
 )
 
-func actOnImagePixel(imageOld image.Image, pixelAction func(p image.Point, imageOld image.Image) color.Color, poolSize int) *image.RGBA {
+/*ActOnImagePixel runs provided function on image. Acts a worker pool*/
+func ActOnImagePixel(imageOld image.Image, pixelAction func(p image.Point, imageOld image.Image) color.Color, poolSize int) *image.RGBA {
 
 	/* Initialize need variables */
 	var wg sync.WaitGroup
@@ -36,7 +37,8 @@ func actOnImagePixel(imageOld image.Image, pixelAction func(p image.Point, image
 	return imageNew
 }
 
-func actOnImageKernal(imageOld image.Image, kernalAction func(p image.Point, imageOld image.Image, kernalSize int) [][]color.Color, kernalSize int, poolSize int) *image.RGBA {
+/*ActOnImageKernal runs provided function on image. Acts a worker pool*/
+func ActOnImageKernal(imageOld image.Image, kernalAction func(p image.Point, imageOld image.Image, kernalSize int) [][]color.Color, kernalSize int, poolSize int) *image.RGBA {
 
 	/* Initialize need variables */
 	var wg sync.WaitGroup

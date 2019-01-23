@@ -9,26 +9,24 @@ import (
 	"os"
 	"path"
 	"reflect"
-	"runtime"
 	"strings"
 
+	"../../pkg/kernalfunctions"
+	"../../pkg/pixalfunctions"
 	"github.com/urfave/cli"
 )
 
-/* Keep odd for simplicity */
 const (
-	sigma                       = 1.6
-	highThreshold, lowThreshold = 7500, 20000
-	cliDelimitor                = ","
+	cliDelimitor = ","
 )
 
 var (
 	availableFunctions = map[string]func(image.Image) image.Image{
-		"greyscale":       greyscaleHandle,
-		"gaussian":        gaussianHandle,
-		"sobel":           sobelHandle,
-		"doubleThreshold": doubleThresholdHandle,
-		"fillInGaps":      fillInGapsHandle,
+		"greyscale":       pixalfunctions.GreyscaleHandle,
+		"gaussian":        kernalfunctions.GaussianHandle,
+		"sobel":           kernalfunctions.SobelHandle,
+		"doubleThreshold": pixalfunctions.DoubleThresholdHandle,
+		"fillInGaps":      pixalfunctions.FillInGapsHandle,
 	}
 )
 
@@ -126,22 +124,6 @@ func contains(list []string, e string) bool {
 		}
 	}
 	return false
-}
-
-func greyscaleHandle(loadedImage image.Image) image.Image {
-	return actOnImagePixel(loadedImage, greyscale, runtime.GOMAXPROCS(0))
-}
-func gaussianHandle(loadedImage image.Image) image.Image {
-	return actOnImageKernal(loadedImage, gaussianFilter, 7, runtime.GOMAXPROCS(0)/5)
-}
-func sobelHandle(loadedImage image.Image) image.Image {
-	return actOnImageKernal(loadedImage, sobelFilter, 3, runtime.GOMAXPROCS(0)/5)
-}
-func doubleThresholdHandle(loadedImage image.Image) image.Image {
-	return actOnImagePixel(loadedImage, doubleThreshold, runtime.GOMAXPROCS(0))
-}
-func fillInGapsHandle(loadedImage image.Image) image.Image {
-	return actOnImagePixel(loadedImage, fillInGaps, runtime.GOMAXPROCS(0))
 }
 
 func createDerivedFileNames(filePath string, mod string) string {
