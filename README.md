@@ -4,7 +4,7 @@ Implementation of simple Edge Detection in Go
 
 Accepts PNG and JPEG images
 
-Builds to a command line app
+Builds to a command line app, but planning to make some kind of gui for it.
 
 options when running:
 
