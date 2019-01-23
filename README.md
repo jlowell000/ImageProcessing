@@ -1,6 +1,6 @@
 # ImageProcessing
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/jlowell000/ImageProcessing)](https://goreportcard.com/report/github.com/jlowell000/ImageProcessing)[![Go Doc](https://img.shields.io/badge/godoc-reference-blue.svg?style=flat-square)](https://godoc.org/github.com/jlowell000/ImageProcessing)
+[![Go Report Card](https://goreportcard.com/badge/github.com/jlowell000/ImageProcessing)](https://goreportcard.com/report/github.com/jlowell000/ImageProcessing)  [![Go Doc](https://img.shields.io/badge/godoc-reference-blue.svg?style=flat-square)](https://godoc.org/github.com/jlowell000/ImageProcessing)
 
 Implementation of simple Edge Detection in Go. Accepts PNG and JPEG image files. Currently only a CLI implementation.
 
