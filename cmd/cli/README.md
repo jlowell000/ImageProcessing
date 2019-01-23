@@ -1,5 +1,5 @@
 
-Builds to a command line app, but planning to make some kind of gui for it.
+Builds to a command line app
 
 options when running:
 
